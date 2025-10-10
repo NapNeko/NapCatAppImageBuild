@@ -86,4 +86,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: "QQ-NapCat-${{ github.event.inputs.napcat_version }}"
-          path: "*.AppImage"
+          path: "QQ-NapCat-${{ github.event.inputs.napcat_version }}.AppImage"
