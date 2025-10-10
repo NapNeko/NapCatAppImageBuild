@@ -56,10 +56,22 @@ jobs:
      
       - name: Modify AppRun for xvfb and NAPCAT_WORKDIR
         run: |
-          # 在第二行插入 export NAPCAT_WORKDIR=$(pwd)
           sed -i '2i\export NAPCAT_WORKDIR=$(pwd)' QQ.AppDir/AppRun
-          # 全局替换 exec "$BIN" 为 xvfb-run exec "$BIN"
           sed -i 's|exec "$BIN"|xvfb-run exec "$BIN"|g' QQ.AppDir/AppRun
+          rm -rf QQ.AppDir/resources/app/major.node
+          rm -rf QQ.AppDir/resources/app/avsdk
+          rm -rf QQ.AppDir/resources/app/application.asar
+          rm -rf QQ.AppDir/resources/app/initIpc_ia32.node
+          rm -rf QQ.AppDir/resources/app/initIpc_x64.node
+          rm -rf QQ.AppDir/resources/app/iohook.node
+          rm -rf QQ.AppDir/resources/app/sharp-linux-x64.node
+          rm -rf QQ.AppDir/resources/app/AudioFoundation.dylib
+          rm -rf QQ.AppDir/resources/app/AudioFoundation.node
+          rm -rf QQ.AppDir/resources/app/resource
+          rm -rf QQ.AppDir/resources/app/app_launcher
+          rm -rf QQ.AppDir/chrome_crashpad_handler
+          rm -rf QQ.AppDir/locales/en-US.pak
+          
   
       - name: Prepare AppDir structure
         run: |
@@ -77,7 +89,6 @@ jobs:
       - name: Inject specified system libraries into AppDir (Glibc Excluded)
         run: |
           PACKAGE_LIST="libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 libxext6 libxrender1 libasound2 libdbus-1-3 libxss1 libxtst6 libxkbfile1 libpangocairo-1.0-0"
-          # 黑名单模式：排除 glibc、pthread 等系统库，以及带版本号的 glib/gio 系列库
           BLACKLIST_PATTERN='lib(c|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat|gio|glib)(-[0-9.]*)?\.so(\.[0-9.]*)*$'
           for PKG in $PACKAGE_LIST; do
             dpkg -L "$PKG" | grep '\.so\(\.[0-9.]*\)*$' | egrep -v "$BLACKLIST_PATTERN" | while read -r lib_file; do
@@ -88,15 +99,15 @@ jobs:
           done
 
       
-      - name: Manually bundle remaining dependencies (Glibc Excluded)
-        run: |
-              ldd QQ.AppDir/qq | grep "=> /" | awk '{print $3}' | \
-              egrep -v 'ld-linux|lib(c|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat|util|X11|Xext|GL|GLdispatch|EGL|gio|glib)(-[0-9.]*)?\.so(\.[0-9.]*)*$' | \
-              while read -r lib_path; do
-                  if [ -f "$lib_path" ]; then
-                    cp -nv "$lib_path" QQ.AppDir/usr/lib/
-                  fi
-              done
+      # - name: Manually bundle remaining dependencies (Glibc Excluded)
+      #   run: |
+      #         ldd QQ.AppDir/qq | grep "=> /" | awk '{print $3}' | \
+      #         egrep -v 'ld-linux|lib(c|z|linux_compat|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat|util|X11|Xext|GL|GLdispatch|EGL|gio|glib)(-[0-9.]*)?\.so(\.[0-9.]*)*$' | \
+      #         while read -r lib_path; do
+      #             if [ -f "$lib_path" ]; then
+      #               cp -nv "$lib_path" QQ.AppDir/usr/lib/
+      #             fi
+      #         done
 
 
       - name: Download appimagetool
