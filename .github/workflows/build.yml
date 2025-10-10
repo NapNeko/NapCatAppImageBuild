@@ -64,7 +64,18 @@ jobs:
         run: |
           ./appimagetool.AppImage --appimage-extract
           mv squashfs-root appimagetool-root
-
+      - name: Simple desktop file
+        run: |
+          cat > QQ.AppDir/qq.desktop <<EOL
+      [Desktop Entry]
+      Name=QQ
+      Comment=QQ Instant Messenger
+      Exec=qq
+      Icon=qq
+      Type=Application
+      Categories=Network;InstantMessaging;
+      EOL
+      
       - name: Build self-contained AppImage
         run: |
           ./appimagetool-root/AppRun QQ.AppDir QQ-NapCat-${{ github.event.inputs.napcat_version }}.AppImage
