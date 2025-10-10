@@ -84,6 +84,7 @@ jobs:
             --desktop-file QQ.AppDir/qq.desktop \
             --icon-file QQ.AppDir/qq.png \
             --plugin gtk \
+            --exclude-library libindicator.so.7 \
             --output appimage
 
       - name: Rename and upload artifact
