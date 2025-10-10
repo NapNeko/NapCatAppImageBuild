@@ -66,9 +66,6 @@ jobs:
           Type=Application
           Categories=Network;InstantMessaging;
           EOL
-          if [ -f QQ.AppDir/qq.png ]; then
-            cp QQ.AppDir/qq.png QQ.AppDir/
-          fi
       
       # 步骤 1: 注入指定库，并严格排除 Glibc
       - name: Inject specified system libraries into AppDir (Glibc Excluded)
