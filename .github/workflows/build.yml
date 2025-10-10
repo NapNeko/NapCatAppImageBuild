@@ -26,7 +26,7 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends \
             wget unzip sed patchelf file curl \
-            libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 \
+            libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 libgbm1 \
             libxext6 libxrender1 libasound2 libdbus-1-3 libxss1 \
             libxtst6 libxkbfile1 libpangocairo-1.0-0 xvfb xauth ca-certificates
             update-ca-certificates
@@ -51,7 +51,7 @@ jobs:
         run: |
           mkdir -p QQ.AppDir/napcat
           cp -r NapCat/* QQ.AppDir/napcat/
-          echo "(async () => {await import('file:///napcat/napcat.mjs');})();" > QQ.AppDir/resources/app/loadNapCat.js
+          echo "const path=require('path');const{pathToFileURL}=require('url');(async()=>{await import(pathToFileURL(path.join(__dirname,'../../napcat/napcat.mjs')).href);})();" > QQ.AppDir/resources/app/loadNapCat.js
           sed -i 's|"main": "[^"]*"|"main": "./loadNapCat.js"|' QQ.AppDir/resources/app/package.json
 
       - name: Prepare AppDir structure
@@ -70,7 +70,7 @@ jobs:
       - name: Inject specified system libraries into AppDir (Glibc Excluded)
         run: |
           PACKAGE_LIST="libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 libxext6 libxrender1 libasound2 libdbus-1-3 libxss1 libxtst6 libxkbfile1 libpangocairo-1.0-0"
-          BLACKLIST_PATTERN='lib(c|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat)\.so'
+          BLACKLIST_PATTERN='lib(c|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat|gio|glib)\.so'
           for PKG in $PACKAGE_LIST; do
             dpkg -L "$PKG" | grep '\.so\(\.[0-9.]*\)*$' | egrep -v "$BLACKLIST_PATTERN" | while read -r lib_file; do
               if [ -f "$lib_file" ]; then
