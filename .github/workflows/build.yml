@@ -90,7 +90,7 @@ jobs:
       
       - name: Manually bundle remaining dependencies (Glibc Excluded)
         run: |
-              ldd QQ.AppDir/usr/bin/qq | grep "=> /" | awk '{print $3}' | \
+              ldd QQ.AppDir/qq | grep "=> /" | awk '{print $3}' | \
               egrep -v 'ld-linux|lib(c|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat|util|X11|Xext|GL|GLdispatch|EGL|gio|glib)(-[0-9.]*)?\.so(\.[0-9.]*)*$' | \
               while read -r lib_path; do
                   if [ -f "$lib_path" ]; then
