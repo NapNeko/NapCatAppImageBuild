@@ -57,7 +57,7 @@ jobs:
       - name: Modify AppRun for xvfb and NAPCAT_WORKDIR
         run: |
           sed -i '2i\export NAPCAT_WORKDIR=$(pwd)' QQ.AppDir/AppRun
-          sed -i 's|exec "$BIN"|xvfb-run exec "$BIN"|g' QQ.AppDir/AppRun
+          sed -i 's|exec "$BIN"|xvfb-run -a exec "$BIN"|g' QQ.AppDir/AppRun
           rm -rf QQ.AppDir/resources/app/major.node
           rm -rf QQ.AppDir/resources/app/avsdk
           rm -rf QQ.AppDir/resources/app/application.asar
