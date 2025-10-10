@@ -75,12 +75,15 @@ jobs:
         run: |
           ./linuxdeploy.AppImage --appimage-extract
           mv squashfs-root linuxdeploy-root
+
       - name: 下载并提取 libindicator7
         run: |
               wget https://archive.ubuntu.com/ubuntu/pool/universe/libi/libindicator/libindicator7_16.10.0+18.04.20180321.1-0ubuntu1_amd64.deb
               dpkg-deb -x libindicator7_16.10.0+18.04.20180321.1-0ubuntu1_amd64.deb tmp
-              cp tmp/usr/lib/x86_64-linux-gnu/libindicator.so.7* QQ.AppDir/usr/lib/
-
+              mkdir -p /usr/lib/x86_64-linux-gnu/
+              cp tmp/usr/lib/x86_64-linux-gnu/libindicator.so.7* /usr/lib/x86_64-linux-gnu/
+              ldconfig
+              ldconfig -p | grep libindicator
 
       - name: Bundle GTK and dependencies
         run: |
