@@ -76,13 +76,6 @@ jobs:
           ./linuxdeploy.AppImage --appimage-extract
           mv squashfs-root linuxdeploy-root
 
-      - name: Download linuxdeploy GTK plugin
-        run: |
-          wget -O linuxdeploy-plugin-gtk.AppImage https://github.com/linuxdeploy/linuxdeploy-plugin-gtk/releases/download/continuous/linuxdeploy-plugin-gtk-x86_64.AppImage
-          chmod +x linuxdeploy-plugin-gtk.AppImage
-          ./linuxdeploy-plugin-gtk.AppImage --appimage-extract
-          mv squashfs-root linuxdeploy-plugin-gtk-root
-
       - name: 下载并放置 libindicator7
         run: |
           wget https://archive.ubuntu.com/ubuntu/pool/universe/libi/libindicator/libindicator7_16.10.0+18.04.20180321.1-0ubuntu1_amd64.deb
@@ -99,7 +92,6 @@ jobs:
             --executable QQ.AppDir/qq \
             --desktop-file QQ.AppDir/qq.desktop \
             --icon-file QQ.AppDir/qq.png \
-            --plugin gtk --plugin-path ./linuxdeploy-plugin-gtk-root/usr/bin \
             --output appimage
 
       - name: Rename and upload artifact
