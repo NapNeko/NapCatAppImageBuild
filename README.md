@@ -1,0 +1,2 @@
+# NapCatAppImageBuild
+None
