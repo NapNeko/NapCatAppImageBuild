@@ -113,10 +113,9 @@ jobs:
       - name: Build the AppImage
         run: |
           ./appimagetool.AppImage QQ.AppDir
+          mv QQ-x86_64.AppImage QQ-NapCat-${{ github.event.inputs.napcat_version }}.AppImage
 
       - name: Rename and upload artifact
-        run: |
-          mv QQ-x86_64.AppImage QQ-NapCat-${{ github.event.inputs.napcat_version }}.AppImage
         uses: actions/upload-artifact@v4
         with:
           name: "QQ-NapCat-${{ github.event.inputs.napcat_version }}"
