@@ -53,7 +53,14 @@ jobs:
           cp -r NapCat/* QQ.AppDir/napcat/
           echo "const path=require('path');const{pathToFileURL}=require('url');(async()=>{await import(pathToFileURL(path.join(__dirname,'../../napcat/napcat.mjs')).href);})();" > QQ.AppDir/resources/app/loadNapCat.js
           sed -i 's|"main": "[^"]*"|"main": "./loadNapCat.js"|' QQ.AppDir/resources/app/package.json
-
+     
+      - name: Modify AppRun for xvfb and NAPCAT_WORKDIR
+        run: |
+          # 在第二行插入 export NAPCAT_WORKDIR=$(pwd)
+          sed -i '2i\export NAPCAT_WORKDIR=$(pwd)' QQ.AppDir/AppRun
+          # 全局替换 exec "$BIN" 为 xvfb-run exec "$BIN"
+          sed -i 's|exec "$BIN"|xvfb-run exec "$BIN"|g' QQ.AppDir/AppRun
+  
       - name: Prepare AppDir structure
         run: |
           mkdir -p QQ.AppDir/usr/lib
