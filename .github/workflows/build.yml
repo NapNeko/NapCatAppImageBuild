@@ -1,4 +1,4 @@
-name: Build NapCat QQ AppImage (with dependencies)
+name: Build NapCat QQ AppImage (Debian container, no FUSE)
 
 on:
   workflow_dispatch:
@@ -8,7 +8,7 @@ on:
         required: true
         default: 'v4.8.119'
       qq_version:
-        description: 'QQ Version (完整下载 URL)'
+        description: 'QQ AppImage URL (完整下载链接)'
         required: true
         default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_x86_64.AppImage'
 
@@ -17,34 +17,34 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: debian:stable-slim
+
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           apt-get update
           apt-get install -y --no-install-recommends \
-            wget unzip sed fuse patchelf libglib2.0-0 libgtk-3-0 libx11-6 \
+            wget unzip sed patchelf libglib2.0-0 libgtk-3-0 libx11-6 \
             libnss3 libgcrypt20 libxext6 libxrender1 libasound2 libdbus-1-3 \
             libxss1 libxtst6 libxkbfile1 libpangocairo-1.0-0 xvfb xauth \
-            ca-certificates
+            ca-certificates fuse
           update-ca-certificates
-
 
       - name: Download QQ AppImage
         run: |
           wget -O QQ.AppImage "${{ github.event.inputs.qq_version }}"
           chmod +x QQ.AppImage
 
-      - name: Extract QQ AppImage
+      - name: Extract QQ AppImage (no FUSE)
         run: |
           ./QQ.AppImage --appimage-extract
           mv squashfs-root QQ.AppDir
 
       - name: Download NapCat
         run: |
-          wget -O NapCat.Shell.zip https://github.com/NapNeko/NapCatQQ/releases/download/${{ github.event.inputs.napcat_version }}/NapCat.Shell.zip
+          wget -O NapCat.Shell.zip "https://github.com/NapNeko/NapCatQQ/releases/download/${{ github.event.inputs.napcat_version }}/NapCat.Shell.zip"
           unzip NapCat.Shell.zip -d NapCat
           rm NapCat.Shell.zip
 
@@ -55,26 +55,22 @@ jobs:
           echo "(async () => {await import('file:///napcat/napcat.mjs');})();" > QQ.AppDir/resources/app/loadNapCat.js
           sed -i 's|"main": "[^"]*"|"main": "./loadNapCat.js"|' QQ.AppDir/resources/app/package.json
 
-      - name: Download linuxdeploy and plugin
+      - name: Download appimagetool AppImage
         run: |
-          wget -O linuxdeploy https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          chmod +x linuxdeploy
-          wget -O linuxdeploy-plugin-appimage https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
-          chmod +x linuxdeploy-plugin-appimage
+          wget -O appimagetool.AppImage https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool.AppImage
 
-      - name: Make QQ executable
+      - name: Extract appimagetool (avoid FUSE)
         run: |
-          chmod +x QQ.AppDir/qq
+          ./appimagetool.AppImage --appimage-extract
+          mv squashfs-root appimagetool-root
 
       - name: Build self-contained AppImage
         run: |
-          ./linuxdeploy --appdir QQ.AppDir \
-            --output appimage \
-            --plugin AppImage \
-            --executable QQ.AppDir/qq
+          ./appimagetool-root/AppRun QQ.AppDir QQ-NapCat-${{ github.event.inputs.napcat_version }}.AppImage
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: QQ-NapCat-${{ github.event.inputs.napcat_version }}
+          name: "QQ-NapCat-${{ github.event.inputs.napcat_version }}"
           path: "*.AppImage"
