@@ -84,7 +84,7 @@ jobs:
             --executable QQ.AppDir/qq \
             --desktop-file QQ.AppDir/qq.desktop \
             --icon-file QQ.AppDir/qq.png \
-            --require gtk3 \
+            --plugin gtk \
             --output appimage
 
       - name: Rename and upload artifact
