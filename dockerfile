@@ -33,7 +33,7 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-=
+
 USER napcat
 COPY --chown=napcat:napcat ./download/napcat.AppImage /app/napcat.AppImage
 COPY --chown=napcat:napcat xvfb-run.sh /usr/local/bin/xvfb-run
