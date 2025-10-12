@@ -6,7 +6,7 @@ on:
 env:
   REGISTRY_GHCR: ghcr.io
   REGISTRY_DOCKER: docker.io
-  IMAGE_NAME: ${{ github.repository_owner }}/napcatappimagebuild
+  IMAGE_NAME: napneko/napcatappimagebuild
 
 jobs:
   build-and-push:
