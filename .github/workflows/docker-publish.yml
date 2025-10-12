@@ -90,7 +90,6 @@ jobs:
           cache-from: type=gha,scope=${{ matrix.arch }}
           cache-to: type=gha,mode=max,scope=${{ matrix.arch }}
           provenance: false
-          outputs: type=image,name=target,annotation-index.org.opencontainers.image.description=NapCat AppImage for ${{ matrix.arch }}
 
       # 输出镜像信息
       - name: Output image info
