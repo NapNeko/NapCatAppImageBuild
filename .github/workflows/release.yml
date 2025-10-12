@@ -1,4 +1,4 @@
-name: Build NapCat QQ AppImage (Ubuntu container, self-contained)
+name: Release NapCat AppImage
 
 on:
   workflow_dispatch:
