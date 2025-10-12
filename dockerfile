@@ -27,11 +27,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libfreetype6-dev \
     libx11-dev \
     libxext-dev \
-    libxfont2-dev \
+    libxfont-dev \
     libxkbfile-dev \
     libxrandr-dev \
     libpixman-1-dev \
-    x11proto-dev \
+    xorg-dev \
     xtrans-dev \
     zlib1g-dev \
     libexpat1-dev \
