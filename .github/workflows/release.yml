@@ -164,7 +164,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.event.inputs.napcat_version }}
-          name: "QQ-NapCat ${{ github.event.inputs.napcat_version }}"
+          name: "NapCat AppImage ${{ github.event.inputs.napcat_version }}"
           body: |
             **QQ Version (amd64)**: ${{ steps.versions.outputs.qq_version_x86 }}
             **QQ Version (arm64)**: ${{ steps.versions.outputs.qq_version_arm }}
