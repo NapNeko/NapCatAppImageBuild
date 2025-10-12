@@ -30,6 +30,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Download NapCat AppImage
+        run: |
+          mkdir -p ./download
+          ARCH_SUFFIX=${{ matrix.arch }}
+          APPIMAGE_URL=$(curl -s https://api.github.com/repos/NapNeko/NapCatAppImageBuild/releases/latest | \
+            grep -o "https://[^\"]*NapCat[^\"]*${ARCH_SUFFIX}\.AppImage" | head -n 1)
+          echo "Downloading: $APPIMAGE_URL"
+          curl -L -o ./download/napcat.AppImage "$APPIMAGE_URL"
+          chmod +x ./download/napcat.AppImage
+          ls -la ./download/
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
