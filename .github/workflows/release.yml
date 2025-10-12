@@ -170,7 +170,7 @@ jobs:
             **QQ Version (arm64)**: ${{ steps.versions.outputs.qq_version_arm }}
             **NapCat**: ${{ github.event.inputs.napcat_version }}
             **Arch**: amd64, arm64
-            
+
             确保安装 fuse 和 xvfb 后运行
             ```bash
             chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
@@ -179,7 +179,7 @@ jobs:
             chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
             ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
             ```
-            如果不想安装 fuse 可以
+            如果不想安装 fuse 可以,但需要安装xvfb
             ```bash
             chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
             ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage --appimage-extract-and-run
