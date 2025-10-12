@@ -5,7 +5,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends --no-install-suggests \
         xserver-xorg-core \
-        xserver-xorg-video-dummy && \
+        xserver-xorg-video-dummy libxdamage1 libxcomposite1 libxfixes3 libxrender1 libx11-6 libxext6 libxkbcommon0 libcairo2 libcairo-gobject2 libgdk-pixbuf2.0-0 libpangoft2-1.0-0 libpango-1.0-0\
+        libglib2.0-0 libnspr4 libatk1.0-0 libatk-bridge2.0-0  libcups2 libxcursor1 libwayland-cursor0 libwayland-egl1 libpango-1.0-0 libcairo2 libxcomposite1 libxinerama1 && \
     apt-get clean && \
     apt-get autoremove -y --purge && \
     rm -rf /var/lib/apt/lists/* \
@@ -32,18 +33,16 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# 先设置正确的所有权，然后复制文件，避免 chown 操作创建新层
+=
 USER napcat
 COPY --chown=napcat:napcat ./download/napcat.AppImage /app/napcat.AppImage
 COPY --chown=napcat:napcat xvfb-run.sh /usr/local/bin/xvfb-run
 
-# 设置执行权限
+
 USER root
 RUN chmod +x /app/napcat.AppImage && \
     chmod +x /usr/local/bin/xvfb-run && \
     chmod 755 /usr/local/bin/xvfb-run
-
-USER napcat
 
 USER napcat
 
