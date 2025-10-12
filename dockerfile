@@ -66,7 +66,6 @@ RUN ./configure \
     --disable-xace \
     --disable-xselinux \
     --disable-xcsecurity \
-    --disable-tslib \
     --disable-dbe \
     --disable-xf86bigfont \
     --disable-dpms \
@@ -89,9 +88,34 @@ RUN ./configure \
     CFLAGS="-Os -ffunction-sections -fdata-sections" \
     LDFLAGS="-Wl,--gc-sections"
 
-# 编译并安装，只编译 Xvfb
-RUN make -j$(nproc) hw/vfb/Xvfb && \
-    install -D -s hw/vfb/Xvfb /usr/local/bin/Xvfb
+# 编译并安装，只编译 Xvfb（更稳健的构建步骤）
+# 尝试只在 hw/vfb 子目录构建 Xvfb 目标；如果目标不存在或失败，则回退到顶层 make
+RUN set -eux; \
+    if make -n hw/vfb/Xvfb >/dev/null 2>&1; then \
+        echo "Building hw/vfb/Xvfb target..."; \
+        make -j$(nproc) hw/vfb/Xvfb && install -D -s hw/vfb/Xvfb /usr/local/bin/Xvfb; \
+    else \
+        echo "Target hw/vfb/Xvfb not available, falling back to full build..."; \
+        if make -j$(nproc); then \
+            # try to find the built Xvfb binary in common locations
+            if [ -f hw/vfb/Xvfb ]; then \
+                install -D -s hw/vfb/Xvfb /usr/local/bin/Xvfb; \
+            else \
+                echo "Full make succeeded but hw/vfb/Xvfb not found. Listing build tree for debug:"; \
+                find . -maxdepth 4 -type f -name 'Xvfb' -print || true; \
+                echo "Showing hw/vfb directory:"; ls -la hw/vfb || true; \
+                echo "Showing top-level Makefile (if exists):"; sed -n '1,200p' Makefile || true; \
+                false; \
+            fi; \
+        else \
+            echo "Full make failed. Dumping debug info:"; \
+            echo "Current dir:"; pwd; \
+            echo "Listing top-level:"; ls -la || true; \
+            echo "Listing hw/vfb:"; ls -la hw/vfb || true; \
+            echo "Printing configure summary:"; cat config.log || true; \
+            false; \
+        fi; \
+    fi
 
 # 找出运行时依赖的最小库集合
 RUN ldd /usr/local/bin/Xvfb | grep "=> /" | awk '{print $3}' | sort | uniq > /tmp/required-libs.txt
