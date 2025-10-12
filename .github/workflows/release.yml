@@ -1,0 +1,193 @@
+name: Build NapCat QQ AppImage (Ubuntu container, self-contained)
+
+on:
+  workflow_dispatch:
+    inputs:
+      napcat_version:
+        description: 'NapCat Version (e.g., v4.8.119)'
+        required: true
+        default: 'v4.8.119'
+      qq_version_x86_64:
+        description: 'QQ AppImage URL for x86_64 (完整下载链接)'
+        required: false
+        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_x86_64.AppImage'
+      qq_version_arm64:
+        description: 'QQ AppImage URL for arm64 (完整下载链接)'
+        required: false
+        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_arm64.AppImage'
+
+jobs:
+  build:
+    runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm64' || 'ubuntu-latest' }}
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    container:
+      image: ubuntu:22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build tools and runtime dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            wget unzip sed patchelf file curl \
+            libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 libgbm1 \
+            libxext6 libxrender1 libasound2 libdbus-1-3 libxss1 \
+            libxtst6 libxkbfile1 libpangocairo-1.0-0 xvfb xauth ca-certificates
+            update-ca-certificates
+
+      - name: Download QQ AppImage
+        run: |
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            wget -O QQ.AppImage "${{ github.event.inputs.qq_version_arm64 }}"
+          else
+            wget -O QQ.AppImage "${{ github.event.inputs.qq_version_x86_64 }}"
+          fi
+          chmod +x QQ.AppImage
+
+      - name: Extract QQ AppImage
+        run: |
+          ./QQ.AppImage --appimage-extract
+          mv squashfs-root QQ.AppDir
+
+      - name: Download NapCat
+        run: |
+          wget -O NapCat.Shell.zip "https://github.com/NapNeko/NapCatQQ/releases/download/${{ github.event.inputs.napcat_version }}/NapCat.Shell.zip"
+          unzip NapCat.Shell.zip -d NapCat
+          rm NapCat.Shell.zip
+
+      - name: Inject NapCat into QQ
+        run: |
+          mkdir -p QQ.AppDir/napcat
+          cp -r NapCat/* QQ.AppDir/napcat/
+          echo "const path=require('path');const{pathToFileURL}=require('url');(async()=>{await import(pathToFileURL(path.join(__dirname,'../../napcat/napcat.mjs')).href);})();" > QQ.AppDir/resources/app/loadNapCat.js
+          sed -i 's|"main": "[^"]*"|"main": "./loadNapCat.js"|' QQ.AppDir/resources/app/package.json
+
+      - name: Modify AppRun for xvfb and NAPCAT_WORKDIR
+        run: |
+          sed -i '2i\export NAPCAT_WORKDIR=$(pwd)' QQ.AppDir/AppRun
+          sed -i 's|exec "$BIN"|xvfb-run -a exec "$BIN"|g' QQ.AppDir/AppRun
+          rm -rf QQ.AppDir/resources/app/major.node
+          rm -rf QQ.AppDir/resources/app/avsdk
+          rm -rf QQ.AppDir/resources/app/application.asar
+          rm -rf QQ.AppDir/resources/app/initIpc_ia32.node
+          rm -rf QQ.AppDir/resources/app/initIpc_x64.node
+          rm -rf QQ.AppDir/resources/app/iohook.node
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            rm -rf QQ.AppDir/resources/app/sharp-linux-arm64v8.node
+          else
+            rm -rf QQ.AppDir/resources/app/sharp-linux-x64.node
+          fi
+          rm -rf QQ.AppDir/resources/app/AudioFoundation.dylib
+          rm -rf QQ.AppDir/resources/app/AudioFoundation.node
+          rm -rf QQ.AppDir/resources/app/resource
+          rm -rf QQ.AppDir/resources/app/app_launcher
+          rm -rf QQ.AppDir/chrome_crashpad_handler
+          rm -rf QQ.AppDir/locales/en-US.pak
+
+      - name: Prepare AppDir structure
+        run: |
+          mkdir -p QQ.AppDir/usr/lib
+          cat > QQ.AppDir/qq.desktop <<EOL
+          [Desktop Entry]
+          Name=QQ
+          Comment=QQ Instant Messenger
+          Exec=qq
+          Icon=qq
+          Type=Application
+          Categories=Network;InstantMessaging;
+          EOL
+
+      - name: Inject specified system libraries into AppDir (Glibc Excluded)
+        run: |
+          PACKAGE_LIST="libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 libxext6 libxrender1 libasound2 libdbus-1-3 libxss1 libxtst6 libxkbfile1 libpangocairo-1.0-0"
+          BLACKLIST_PATTERN='lib(c|dl|m|pthread|rt|resolv|nss_dns|nss_files|nss_compat|gio|glib)(-[0-9.]*)?\.so(\.[0-9.]*)*$'
+          for PKG in $PACKAGE_LIST; do
+            dpkg -L "$PKG" | grep '\.so\(\.[0-9.]*\)*$' | egrep -v "$BLACKLIST_PATTERN" | while read -r lib_file; do
+              if [ -f "$lib_file" ]; then
+                cp -v "$lib_file" QQ.AppDir/usr/lib/
+              fi
+            done
+          done
+
+      - name: Download appimagetool
+        run: |
+          if [ "${{ matrix.arch }}" = "arm64" ]; then
+            wget -O appimagetool.AppImage "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-aarch64.AppImage"
+          else
+            wget -O appimagetool.AppImage "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage"
+          fi
+          chmod +x appimagetool.AppImage
+
+      - name: Build AppImage with final name
+        run: |
+          QQ_VERSION=$(echo "${{ matrix.arch == 'arm64' && github.event.inputs.qq_version_arm64 || github.event.inputs.qq_version_x86_64 }}" | grep -oP '\d+(?=_(?:x86_64|arm64)\.AppImage)')
+          ARCH_NAME=${{ matrix.arch == 'arm64' && 'arm64' || 'amd64' }}
+          ./appimagetool.AppImage --appimage-extract-and-run QQ.AppDir "QQ-${QQ_VERSION}_NapCat-${{ github.event.inputs.napcat_version }}-${ARCH_NAME}.AppImage"
+
+      - name: Upload artifact
+        run: |
+          QQ_VERSION=$(echo "${{ matrix.arch == 'arm64' && github.event.inputs.qq_version_arm64 || github.event.inputs.qq_version_x86_64 }}" | grep -oP '\d+(?=_(?:x86_64|arm64)\.AppImage)')
+          ARCH_NAME=${{ matrix.arch == 'arm64' && 'arm64' || 'amd64' }}
+          echo "QQ_VERSION=${QQ_VERSION}" >> $GITHUB_ENV
+          echo "ARCH_NAME=${ARCH_NAME}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=QQ-${QQ_VERSION}_NapCat-${{ github.event.inputs.napcat_version }}-${ARCH_NAME}.AppImage" >> $GITHUB_ENV
+
+      - name: Upload artifact to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: "QQ-${{ env.QQ_VERSION }}_NapCat-${{ github.event.inputs.napcat_version }}-${{ env.ARCH_NAME }}"
+          path: "${{ env.ARTIFACT_NAME }}"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Extract QQ versions
+        id: versions
+        run: |
+          QQ_VERSION_X86=$(echo "${{ github.event.inputs.qq_version_x86_64 }}" | grep -oP '\d+(?=_x86_64\.AppImage)')
+          QQ_VERSION_ARM=$(echo "${{ github.event.inputs.qq_version_arm64 }}" | grep -oP '\d+(?=_arm64\.AppImage)')
+          echo "qq_version_x86=${QQ_VERSION_X86}" >> $GITHUB_OUTPUT
+          echo "qq_version_arm=${QQ_VERSION_ARM}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.napcat_version }}
+          name: "QQ-NapCat ${{ github.event.inputs.napcat_version }}"
+          body: |
+            **QQ Version (amd64)**: ${{ steps.versions.outputs.qq_version_x86 }}
+            **QQ Version (arm64)**: ${{ steps.versions.outputs.qq_version_arm }}
+            **NapCat**: ${{ github.event.inputs.napcat_version }}
+            **Arch**: amd64, arm64
+            
+            确保安装 fuse 和 xvfb 后运行
+            ```bash
+            chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
+            ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
+
+            chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
+            ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
+            ```
+            如果不想安装 fuse 可以
+            ```bash
+            chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
+            ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage --appimage-extract-and-run
+
+            chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
+            ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage --appimage-extract-and-run
+            ```
+          files: |
+            artifacts/*/QQ-*_NapCat-*.AppImage
+          draft: false
+          prerelease: false
