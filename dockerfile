@@ -41,7 +41,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /build
 
 # 下载 Xorg 服务器源码
-RUN wget https://www.x.org/archive/individual/xserver/xorg-server-21.1.8.tar.xz && \
+RUN wget --no-check-certificate https://www.x.org/archive/individual/xserver/xorg-server-21.1.8.tar.xz && \
     tar -xf xorg-server-21.1.8.tar.xz
 
 WORKDIR /build/xorg-server-21.1.8
