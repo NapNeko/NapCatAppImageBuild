@@ -4,17 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       napcat_version:
-        description: 'NapCat Version (e.g., v4.8.119)'
+        description: 'NapCat Version (e.g., v4.8.120)'
         required: true
-        default: 'v4.8.119'
+        default: 'v4.8.120'
       qq_version_x86_64:
         description: 'QQ AppImage URL for x86_64 (完整下载链接)'
         required: false
-        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_x86_64.AppImage'
+        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/ab90fdfa/linuxqq_3.2.20-40768_x86_64.AppImage'
       qq_version_arm64:
         description: 'QQ AppImage URL for arm64 (完整下载链接)'
         required: false
-        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_arm64.AppImage'
+        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/ab90fdfa/linuxqq_3.2.20-40768_arm64.AppImage'
 
 jobs:
   build:
