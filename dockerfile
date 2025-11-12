@@ -46,4 +46,4 @@ RUN chmod +x /app/napcat.AppImage && \
 
 USER napcat
 
-CMD ["/bin/bash", "-c", "rm -f /tmp/.X99-lock && /app/napcat.AppImage --appimage-extract-and-run"]
+CMD ["/bin/bash", "-c", "trap "" SIGPIPE && rm -f /tmp/.X99-lock && /app/napcat.AppImage --appimage-extract-and-run"]
