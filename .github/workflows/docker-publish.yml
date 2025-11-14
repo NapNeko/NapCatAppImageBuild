@@ -2,7 +2,10 @@ name: Publish Docker Image
 
 on:
   workflow_dispatch:
-
+  workflow_run:
+    workflows: ["Release NapCat AppImage"]
+    types:
+      - completed
 env:
   REGISTRY_GHCR: ghcr.io
   REGISTRY_DOCKER: docker.io
