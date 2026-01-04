@@ -34,11 +34,23 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download NapCat AppImage
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p ./download
-          ARCH_SUFFIX=${{ matrix.arch }}
-          APPIMAGE_URL=$(curl -s https://api.github.com/repos/NapNeko/NapCatAppImageBuild/releases/latest | \
-            grep -o "https://[^\"]*NapCat[^\"]*${ARCH_SUFFIX}\.AppImage" | head -n 1)
+          ARCH_SUFFIX="${{ matrix.arch }}"
+          
+          # 使用 gh cli 获取最新 release 的资产下载链接（更可靠）
+          APPIMAGE_URL=$(gh api repos/NapNeko/NapCatAppImageBuild/releases/latest \
+            --jq ".assets[] | select(.name | test(\"${ARCH_SUFFIX}\\.AppImage$\")) | .browser_download_url" | head -n 1)
+          
+          if [ -z "$APPIMAGE_URL" ]; then
+            echo "Error: Failed to get AppImage download URL for ${ARCH_SUFFIX}"
+            echo "Available assets:"
+            gh api repos/NapNeko/NapCatAppImageBuild/releases/latest --jq '.assets[].name'
+            exit 1
+          fi
+          
           echo "Downloading: $APPIMAGE_URL"
           curl -L -o ./download/napcat.AppImage "$APPIMAGE_URL"
           chmod +x ./download/napcat.AppImage
