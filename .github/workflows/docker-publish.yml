@@ -42,7 +42,7 @@ jobs:
           
           # 使用 gh cli 获取最新 release 的资产下载链接（更可靠）
           APPIMAGE_URL=$(gh api repos/NapNeko/NapCatAppImageBuild/releases/latest \
-            --jq ".assets[] | select(.name | test(\"${ARCH_SUFFIX}\\.AppImage$\")) | .browser_download_url" | head -n 1)
+            --jq ".assets[] | select(.name | endswith(\"${ARCH_SUFFIX}.AppImage\")) | .browser_download_url" | head -n 1)
           
           if [ -z "$APPIMAGE_URL" ]; then
             echo "Error: Failed to get AppImage download URL for ${ARCH_SUFFIX}"
