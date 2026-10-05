@@ -10,11 +10,11 @@ on:
       qq_version_x86_64:
         description: 'QQ AppImage URL for x86_64 (完整下载链接)'
         required: false
-        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/8015ff90/linuxqq_3.2.21-42086_x86_64.AppImage'
+        default: 'https://qqdl.gtimg.cn/qqfile/QQNT/9.9.33/release/3f89efc5/QQ_3.2.32_260812_x86_64_01.AppImage'
       qq_version_arm64:
         description: 'QQ AppImage URL for arm64 (完整下载链接)'
         required: false
-        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/8015ff90/linuxqq_3.2.21-42086_arm64.AppImage'
+        default: 'https://qqdl.gtimg.cn/qqfile/QQNT/9.9.33/release/3f89efc5/QQ_3.2.32_260812_arm64_01.AppImage'
 
 jobs:
   build:
@@ -51,6 +51,16 @@ jobs:
         run: |
           ./QQ.AppImage --appimage-extract
           mv squashfs-root QQ.AppDir
+
+      - name: Read QQ version
+        run: |
+          # 官方新文件名（QQ_3.2.32_260812_x86_64_01.AppImage）里没有构建号，直接从 QQ 自己的 package.json 读
+          QQ_VERSION=$(sed -n 's/.*"version": *"[^"]*-\([0-9]*\)".*/\1/p' QQ.AppDir/resources/app/package.json | head -n1)
+          if [ -z "$QQ_VERSION" ]; then
+            echo "无法从 package.json 读取 QQ 版本"
+            exit 1
+          fi
+          echo "QQ_VERSION=${QQ_VERSION}" >> $GITHUB_ENV
 
       - name: Download NapCat
         run: |
@@ -123,15 +133,12 @@ jobs:
 
       - name: Build AppImage with final name
         run: |
-          QQ_VERSION=$(echo "${{ matrix.arch == 'arm64' && github.event.inputs.qq_version_arm64 || github.event.inputs.qq_version_x86_64 }}" | grep -oP '\d+(?=_(?:x86_64|arm64)\.AppImage)')
           ARCH_NAME=${{ matrix.arch == 'arm64' && 'arm64' || 'amd64' }}
           ./appimagetool.AppImage --appimage-extract-and-run QQ.AppDir "QQ-${QQ_VERSION}_NapCat-${{ github.event.inputs.napcat_version }}-${ARCH_NAME}.AppImage"
 
       - name: Upload artifact
         run: |
-          QQ_VERSION=$(echo "${{ matrix.arch == 'arm64' && github.event.inputs.qq_version_arm64 || github.event.inputs.qq_version_x86_64 }}" | grep -oP '\d+(?=_(?:x86_64|arm64)\.AppImage)')
           ARCH_NAME=${{ matrix.arch == 'arm64' && 'arm64' || 'amd64' }}
-          echo "QQ_VERSION=${QQ_VERSION}" >> $GITHUB_ENV
           echo "ARCH_NAME=${ARCH_NAME}" >> $GITHUB_ENV
           echo "ARTIFACT_NAME=QQ-${QQ_VERSION}_NapCat-${{ github.event.inputs.napcat_version }}-${ARCH_NAME}.AppImage" >> $GITHUB_ENV
 
@@ -155,8 +162,9 @@ jobs:
       - name: Extract QQ versions
         id: versions
         run: |
-          QQ_VERSION_X86=$(echo "${{ github.event.inputs.qq_version_x86_64 }}" | grep -oP '\d+(?=_x86_64\.AppImage)')
-          QQ_VERSION_ARM=$(echo "${{ github.event.inputs.qq_version_arm64 }}" | grep -oP '\d+(?=_arm64\.AppImage)')
+          # 版本号取自构建产物的文件名（QQ-<构建号>_NapCat-<版本>-<架构>.AppImage）
+          QQ_VERSION_X86=$(ls artifacts/*/QQ-*_NapCat-*-amd64.AppImage | head -n1 | sed -n 's|.*/QQ-\([0-9]*\)_NapCat-.*|\1|p')
+          QQ_VERSION_ARM=$(ls artifacts/*/QQ-*_NapCat-*-arm64.AppImage | head -n1 | sed -n 's|.*/QQ-\([0-9]*\)_NapCat-.*|\1|p')
           echo "qq_version_x86=${QQ_VERSION_X86}" >> $GITHUB_OUTPUT
           echo "qq_version_arm=${QQ_VERSION_ARM}" >> $GITHUB_OUTPUT
 
@@ -176,16 +184,16 @@ jobs:
             chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
             ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
 
-            chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
-            ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
+            chmod +x QQ-${{ steps.versions.outputs.qq_version_arm }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
+            ./QQ-${{ steps.versions.outputs.qq_version_arm }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
             ```
             如果不想安装 fuse 可以,但需要安装xvfb
             ```bash
             chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage
             ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-amd64.AppImage --appimage-extract-and-run
 
-            chmod +x QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
-            ./QQ-${{ steps.versions.outputs.qq_version_x86 }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage --appimage-extract-and-run
+            chmod +x QQ-${{ steps.versions.outputs.qq_version_arm }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage
+            ./QQ-${{ steps.versions.outputs.qq_version_arm }}_NapCat-${{ github.event.inputs.napcat_version }}-arm64.AppImage --appimage-extract-and-run
             ```
           files: |
             artifacts/*/QQ-*_NapCat-*.AppImage
