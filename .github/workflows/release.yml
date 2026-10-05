@@ -39,11 +39,26 @@ jobs:
             update-ca-certificates
 
       - name: Download QQ AppImage
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ "${{ matrix.arch }}" = "arm64" ]; then
-            wget -O QQ.AppImage "${{ github.event.inputs.qq_version_arm64 }}"
+            QQ_URL="${{ github.event.inputs.qq_version_arm64 }}"
           else
-            wget -O QQ.AppImage "${{ github.event.inputs.qq_version_x86_64 }}"
+            QQ_URL="${{ github.event.inputs.qq_version_x86_64 }}"
+          fi
+          if ! wget --tries=3 --timeout=60 -O QQ.AppImage "$QQ_URL"; then
+            # 腾讯 CDN 偶尔连不上，旧版本也会被下架，这时从 Rodert/qq-versions 镜像找同名文件下载
+            QQ_FILE=$(basename "$QQ_URL")
+            MIRROR_URL=$(curl -fsSL -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/Rodert/qq-versions/releases?per_page=100" \
+              | grep -o "\"browser_download_url\": *\"[^\"]*/$QQ_FILE\"" | head -n1 | sed 's/.*"\(https[^"]*\)"$/\1/')
+            if [ -z "$MIRROR_URL" ]; then
+              echo "QQ 下载失败，镜像里也没有 $QQ_FILE"
+              exit 1
+            fi
+            echo "改从镜像下载：$MIRROR_URL"
+            wget --tries=3 -O QQ.AppImage "$MIRROR_URL"
           fi
           chmod +x QQ.AppImage
 
