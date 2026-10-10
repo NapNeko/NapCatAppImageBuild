@@ -4,8 +4,8 @@ ENV DEBIAN_FRONTEND=noninteractive
 # 创建用户并安装必要的包，然后进行彻底清理
 RUN apt-get update && \
     apt-get install -y --no-install-recommends --no-install-suggests \
-        xserver-xorg-core \
-        xserver-xorg-video-dummy libxdamage1 libxcomposite1 libxfixes3 libxrender1 libx11-6 libxext6 libxkbcommon0 libcairo2 libcairo-gobject2 libgdk-pixbuf2.0-0 libpangoft2-1.0-0 libpango-1.0-0\
+        xvfb xauth libnss3 libgbm1 libasound2 libgssapi-krb5-2 \
+        libxdamage1 libxcomposite1 libxfixes3 libxrender1 libx11-6 libxext6 libxkbcommon0 libcairo2 libcairo-gobject2 libgdk-pixbuf2.0-0 libpangoft2-1.0-0 libpango-1.0-0\
         libglib2.0-0 libnspr4 libatk1.0-0 libatk-bridge2.0-0  libcups2 libxcursor1 libwayland-cursor0 libwayland-egl1 libpango-1.0-0 libcairo2 libxcomposite1 libxinerama1 && \
     apt-get clean && \
     apt-get autoremove -y --purge && \
@@ -36,14 +36,11 @@ WORKDIR /app
 
 USER napcat
 COPY --chown=napcat:napcat ./download/napcat.AppImage /app/napcat.AppImage
-COPY --chown=napcat:napcat xvfb-run.sh /usr/local/bin/xvfb-run
 
 
 USER root
-RUN chmod +x /app/napcat.AppImage && \
-    chmod +x /usr/local/bin/xvfb-run && \
-    chmod 755 /usr/local/bin/xvfb-run
+RUN chmod +x /app/napcat.AppImage
 
 USER napcat
 
-CMD ["/bin/bash", "-c", "trap "" SIGPIPE && rm -f /tmp/.X99-lock && /app/napcat.AppImage --appimage-extract-and-run"]
+CMD ["/app/napcat.AppImage", "--appimage-extract-and-run"]

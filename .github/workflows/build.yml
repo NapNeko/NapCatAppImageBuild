@@ -5,11 +5,11 @@ on:
       napcat_version:
         description: 'NapCat Version (e.g., v4.8.119)'
         required: true
-        default: 'v4.8.119'
+        default: 'v4.18.36'
       qq_version:
         description: 'QQ AppImage URL (完整下载链接)'
         required: true
-        default: 'https://dldir1v6.qq.com/qqfile/qq/QQNT/c773cdf7/linuxqq_3.2.19-39038_x86_64.AppImage'
+        default: 'https://qqdl.gtimg.cn/qqfile/QQNT/9.9.36/beta/9ee04bef/linuxqq_3.2.34-53644_x86_64.AppImage'
 
 jobs:
   build:
@@ -27,7 +27,7 @@ jobs:
             wget unzip sed patchelf file curl \
             libglib2.0-0 libgtk-3-0 libx11-6 libnss3 libgcrypt20 libgbm1 \
             libxext6 libxrender1 libasound2 libdbus-1-3 libxss1 \
-            libxtst6 libxkbfile1 libpangocairo-1.0-0 xvfb xauth ca-certificates
+            libxtst6 libxkbfile1 libpangocairo-1.0-0 libgssapi-krb5-2 xvfb xauth ca-certificates
             update-ca-certificates
 
       - name: Download QQ AppImage
@@ -55,21 +55,7 @@ jobs:
      
       - name: Modify AppRun for xvfb and NAPCAT_WORKDIR
         run: |
-          sed -i '2i\export NAPCAT_WORKDIR=$(pwd)' QQ.AppDir/AppRun
-          sed -i 's|exec "$BIN"|xvfb-run -a exec "$BIN"|g' QQ.AppDir/AppRun
-          rm -rf QQ.AppDir/resources/app/major.node
-          rm -rf QQ.AppDir/resources/app/avsdk
-          rm -rf QQ.AppDir/resources/app/application.asar
-          rm -rf QQ.AppDir/resources/app/initIpc_ia32.node
-          rm -rf QQ.AppDir/resources/app/initIpc_x64.node
-          rm -rf QQ.AppDir/resources/app/iohook.node
-          rm -rf QQ.AppDir/resources/app/sharp-linux-x64.node
-          rm -rf QQ.AppDir/resources/app/AudioFoundation.dylib
-          rm -rf QQ.AppDir/resources/app/AudioFoundation.node
-          rm -rf QQ.AppDir/resources/app/resource
-          rm -rf QQ.AppDir/resources/app/app_launcher
-          rm -rf QQ.AppDir/chrome_crashpad_handler
-          rm -rf QQ.AppDir/locales/en-US.pak
+          install -m 755 AppRun QQ.AppDir/AppRun
           
   
       - name: Prepare AppDir structure
