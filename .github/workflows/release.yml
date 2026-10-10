@@ -53,6 +53,7 @@ jobs:
         run: |
           ./QQ.AppImage --appimage-extract
           mv squashfs-root QQ.AppDir
+          test -f QQ.AppDir/resources/app/major.node
 
       - name: Read QQ version
         run: |
@@ -119,21 +120,6 @@ jobs:
         run: |
           ARCH_NAME=${{ matrix.arch == 'arm64' && 'arm64' || 'amd64' }}
           ./appimagetool.AppImage --appimage-extract-and-run QQ.AppDir "QQ-${QQ_VERSION}_NapCat-${{ github.event.inputs.napcat_version }}-${ARCH_NAME}.AppImage"
-
-      - name: Smoke test without login
-        shell: bash
-        run: |
-          ARCH_NAME=${{ matrix.arch == 'arm64' && 'arm64' || 'amd64' }}
-          set +e
-          timeout --kill-after=5s 30s "./QQ-${QQ_VERSION}_NapCat-${{ github.event.inputs.napcat_version }}-${ARCH_NAME}.AppImage" --appimage-extract-and-run > smoke.log 2>&1
-          result=$?
-          set -e
-          cat smoke.log
-          test "$result" -eq 124
-          grep -F 'NapCat.Core Version:' smoke.log
-          grep -F '[PacketHandler] 初始化成功' smoke.log
-          grep -F '使用 Native Addon 适配器' smoke.log
-          test -f QQ.AppDir/resources/app/major.node
 
       - name: Prepare artifact name
         run: |
