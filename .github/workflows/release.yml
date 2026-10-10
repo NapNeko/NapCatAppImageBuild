@@ -20,6 +20,7 @@ jobs:
   build:
     runs-on: ${{ matrix.arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     strategy:
+      fail-fast: false
       matrix:
         arch: [x86_64, arm64]
     container:
@@ -129,7 +130,9 @@ jobs:
           set -e
           cat smoke.log
           test "$result" -eq 124
-          grep -F 'NapCat Version:' smoke.log
+          grep -F 'NapCat.Core Version:' smoke.log
+          grep -F '[PacketHandler] 初始化成功' smoke.log
+          grep -F '使用 Native Addon 适配器' smoke.log
           test -f QQ.AppDir/resources/app/major.node
 
       - name: Prepare artifact name
